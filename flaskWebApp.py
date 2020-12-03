@@ -22,35 +22,44 @@ def message(payload):
     channel_id = event.get('channel')
     user_id = event.get('user')
     text = event.get('text')
+    splitted = text.split(' ')
     print([event,channel_id,user_id,text])
 
     # not a bot user
     if user_id != None and BOT_ID != user_id:
         if channel_id == configJson['MeteoChannelId']:
-            if text == "helpme":
-                # to-do add help response
-                slackAPI.sendSlackMessage(configJson['MeteoBotToken'], configJson['MeteoChannel'],"how can i help you?")
-            else:
-                arguments = text.split(" ")
+            try:
+                if text == "help":
+                    # to-do add help response
+                    meteo.helpMe()
+                elif text == "show regions":
+                    # to-do add help response
+                    meteo.showRegions()
+                elif len(splitted)==3:
+                    if splitted[0] == "meteo":
+                        # get the first argument as city id
+                        cityId = splitted[1]
+                        # get the second argument as number of days to get the forecast
+                        daysToScrape = int(splitted[2])
 
-                if len(arguments)==2:
-                    # get the first argument as city id
-                    cityId = arguments[0]
-                    # get the second argument as number of days to get the forecast
-                    daysToScrape = int(arguments[1])
+                        # create meteo url
+                        url= 'https://www.meteo.gr/cf.cfm?city_id='+cityId
 
-                    # create meteo url
-                    url= 'https://www.meteo.gr/cf.cfm?city_id='+cityId
+                        # each day have 8 row of data
+                        numberOfDataToSend = 8*daysToScrape
 
-                    # each day have 8 row of data
-                    numberOfDataToSend = 8*daysToScrape
-
-                    # meteo have forecast data only for the next 5 days
-                    if numberOfDataToSend>43:
-                        numberOfDataToSend = 43
-                    meteo.sendForecastReport(url,numberOfDataToSend)
+                        # meteo have forecast data only for the next 5 days
+                        if numberOfDataToSend>43:
+                            numberOfDataToSend = 43
+                        meteo.sendForecastReport(url,numberOfDataToSend)
+                    elif splitted[0] == "show" and splitted[1] == "cities":
+                        # get the first argument as city id
+                        regionId = int(splitted[2])
+                        meteo.showRegionCities(regionId)
                 else:
                     slackAPI.sendSlackMessage(configJson['MeteoBotToken'], configJson['MeteoChannel'],"Invalid message, please try again!")
+            except:
+                slackAPI.sendSlackMessage(configJson['MeteoBotToken'], configJson['MeteoChannel'],"Invalid message, please try again!")
 
 if __name__ == "__main__":
     app.run(debug=True)
